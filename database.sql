@@ -1,7 +1,7 @@
 /*
 Note from Ian:
-I decided to explore some more database functionality with this project. I've added a
-couple procedures that can be called instead of directly querying the database. The database
+I decided to explore some more database functionality with this project. I've made it so the completed
+at column updates automatically when the complete column is changed. The database
 can also handle "deleting" tasks while keeping the data around. See the comments for each section
 for more details.
 */
@@ -19,7 +19,8 @@ CREATE TABLE tasks (
 	task			TEXT NOT NULL,
 	created			TIMESTAMPTZ DEFAULT NOW(),
 	due				DATE,
-	completed		TIMESTAMPTZ,
+	complete        BOOLEAN DEFAULT FALSE,
+    completed_at   	TIMESTAMPTZ,
 	deleted			BOOLEAN DEFAULT FALSE,
 	color			VARCHAR(6)
 	);
@@ -32,45 +33,41 @@ INSERT INTO tasks (task)
 INSERT INTO tasks (task)
 	VALUES ('Finish singing the song that never ends');
 
+
 /*
-mark complete is a shorthand for marking a task complete.
-the query should be called as "CALL mark_complete(id);"
-where id is the id of the task being completed
+set_completed_at is called by the trigger on_complete, and sets 
+completed_at based on what the complete value is after the update
 */
 
-CREATE OR REPLACE PROCEDURE mark_complete(INT)
+CREATE OR REPLACE FUNCTION set_completed_at()
+	RETURNS trigger 
 	LANGUAGE plpgsql
 	AS $$
 	BEGIN
-		UPDATE tasks
-			SET completed = NOW()
-			WHERE id = $1;
-		
-		COMMIT;
+		IF NEW.complete = TRUE THEN
+            UPDATE tasks
+                SET completed_at = NOW()
+                WHERE id = NEW.id; 
+        ELSE
+            UPDATE tasks
+                SET completed_at = NULL
+                WHERE id = NEW.id; 
+        END IF;
+        RETURN NEW;
 	END;
 	$$;
-
-/* testing mark_complete*/
-CALL mark_complete(1); 
 
 /*
-mark_incomplete is the same as mark_complete, but just marks the task incomplete
-by setting the completed date to null
+trigger on complete triggers whenever a task is updated an the complete column changes
+it calls the set_completed_at function
 */
-CREATE OR REPLACE PROCEDURE mark_incomplete(INT)
-	LANGUAGE plpgsql
-	AS $$
-	BEGIN
-		UPDATE tasks
-			SET completed = NULL
-			WHERE id = $1;
-		
-		COMMIT;
-	END;
-	$$;
-	
-/* testing mark_incomplete */
-CALL mark_incomplete(1);
+CREATE TRIGGER on_complete
+    AFTER UPDATE ON tasks
+    FOR EACH ROW
+    WHEN (OLD.complete IS DISTINCT FROM NEW.complete)
+    EXECUTE PROCEDURE set_completed_at();
+
+
 
 /*
 mark_deleted marks a task as deleted so the item is ignored by all subsequent queries
@@ -87,9 +84,7 @@ CREATE OR REPLACE PROCEDURE mark_deleted(INT)
 		COMMIT;
 	END;
 	$$;
-	
-/* testing mark_deleted */
-CALL mark_deleted(1);
+
 
 /*
 get_all_tasks returns a table of all tasks not marked deleted.
@@ -99,19 +94,21 @@ get_all_tasks should be used in place of referencing the table directly to ensur
 CREATE OR REPLACE FUNCTION get_all_tasks()
 	RETURNS TABLE (
 		id  			INTEGER,
-		task			TEXT,
-		created			TIMESTAMPTZ,
-		due				DATE,
-		completed		TIMESTAMPTZ,
-		deleted			BOOLEAN,
-		color			VARCHAR(6)
+        task			TEXT,
+        created			TIMESTAMPTZ,
+        due				DATE,
+        complete        BOOLEAN,
+        completed_at   	TIMESTAMPTZ,
+        deleted			BOOLEAN,
+        color			VARCHAR(6)
 	)
 	LANGUAGE plpgsql
 	AS $$
 	BEGIN
 		RETURN QUERY SELECT *
 			FROM tasks
-			WHERE tasks.deleted = FALSE;
+			WHERE tasks.deleted = FALSE
+            ORDER BY created ASC, id ASC;
 	END;
 	$$;
 

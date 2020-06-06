@@ -74,7 +74,10 @@ function getTasks(req, res){
 
 /**
  * postTask handles POST /tasks/ routes. adds a new task to the database. compares
- * the given task item with a list of known column names, discarding any irrelevant keys
+ * the given task item with a list of known column names, discarding any irrelevant keys.
+ * NOTE: falsy values for known columns are not included in the query. any boolean
+ * columns are defaulted to false to prevent null values. This might bite me in the butt
+ * later...
  * 
  * @param req - the request object containing request details received by the router
  * @param res - the response object by which to send a reply to the client
@@ -134,10 +137,71 @@ function postTask(req, res){
         });// end catch
 }// end postTask
 
-// PUT /books/:id updates the status of a book. the body must contain a status key with the 
-// new status
+/**
+ * updateTask updates a given task's attributes to the provided attributes in req.body. 
+ * 
+ * @param req - the request object containing request details received by the router
+ * @param res - the response object by which to send a reply to the client
+ * @returns null
+ */
 function updateTask(req, res){
-    
+    console.log('ROUTE: PUT /tasks/:id');
+    let task = req.body;
+    task.id = req.params.id;
+
+    // define columns and values strings
+    let columns = ''; // columns string to be inserted into the query
+    let values = ''; // values string to be inserted into the query
+    let valNum = 1; // number iterator to be used in generating the values string
+    let queryValues = []; // values array to be used in the pool.query call
+
+    // loop through keys in the received task
+    for(let key in task) {
+        let value = task[key];
+        // if value is falsy or the key name is not in columnNames
+        if(value == false || columnNames.includes(key) === false){
+            console.log('\tWARNING: unrecognized key submitted:', key);
+            continue; // skip this key
+        }
+        if(key === 'completed_at' || key === 'id') { // skip completed_at and id keys. that is handled by the db
+            continue;
+        }
+
+        // if the column string is not empty, add a comma to columns and values
+        if (columns !== ''){ 
+            columns = columns + ", ";
+            values = values + ", ";
+        } // end if
+
+        // add the key to the columns string
+        columns = columns + key;
+        // and "$valNum" to the values string, then iterate currentValue
+        values = values + `$${valNum++}`;
+
+        if(isNaN(Number(task[key]))){ // if the value of task[key] is not a number
+            queryValues.push(task[key]); // add as a string
+        } else { // if it is a number
+            queryValues.push(Number(task[key])); // add as a number
+        } // end if
+    }
+    // add id as the last val in values
+    queryValues.push(Number(task.id));
+
+    // if we've reached this point we should be good to build the query
+    let queryText = `UPDATE tasks SET (${columns}) = (${values}) WHERE id=$${valNum};`;
+    console.log('\tQUERY:', queryText);
+    console.log('\tVALUES:', queryValues);
+
+    // time to make the actual pg query
+    pool.query(queryText, queryValues)
+        .then((result) => { // successful query, respond with rows
+            console.log("\tQUERY: Success! rowCount:", result.rowCount);
+            res.sendStatus(202);
+        })// end then
+        .catch((error) => { // error caught, respond with error message
+            console.log("\tQUERY: Failure:", error);
+            res.status(500).send("Ouch, don't do that please!");
+        });// end catch
 }// end POST root
 
 // __________ END ROUTER FUNCTIONS __________
