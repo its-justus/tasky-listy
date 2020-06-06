@@ -3,6 +3,16 @@ const pool = require('../modules/pool');
 const express = require('express');
 const router = express.Router();
 
+// get columnNames. columnNames is used in the POST query builder to avoid 
+// sending invalid columns to the database.
+const columnNames = [];
+pool.query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'tasks';")
+    .then((result) => {
+        for(let column of result.rows) {
+            columnNames.push(column.column_name);
+        }
+    }) // end then
+
 // __________ ROUTING __________
 // delete task
 router.delete('/:id', deleteTask);
@@ -63,7 +73,8 @@ function getTasks(req, res){
 
 
 /**
- * postTask handles POST /tasks/ routes. adds a new task to the database
+ * postTask handles POST /tasks/ routes. adds a new task to the database. compares
+ * the given task item with a list of known column names, discarding any irrelevant keys
  * 
  * @param req - the request object containing request details received by the router
  * @param res - the response object by which to send a reply to the client
@@ -78,39 +89,33 @@ function postTask(req, res){
     let values = ''; // values string to be inserted into the query
     let valNum = 1; // number iterator to be used in generating the values string
     let queryValues = []; // values array to be used in the pool.query call
-    let currentKey = ''; // current key of task, used for error messages
 
-    // keys in body are expected to match the column names in the tasks table
-    try {
-        for (let key in task){ // loop through each key in task
-            currentKey = key; // set currentKey to key for error messaging
-            
-            if (!task[key]){ // if the value of task[key] is not truthy, skip this key 
-                continue;
-            } // end if
+    // loop through keys in the received task
+    for(let key in task) {
+        let value = task[key];
+        // if value is falsy or the key name is not in columnNames
+        if(value == false || columnNames.includes(key) === false){
+            console.log('\tWARNING: unrecognized key submitted:', key);
+            continue; // skip this key
+        }
 
-            if (columns !== ''){ // if the column string is not empty, add a comma to columns and values
-                columns = columns + ", ";
-                values = values + ", ";
-            } // end if
-            
-            // add the key to the columns string
-            columns = columns + key;
-            // and "$valNum" to the values string, then iterate currentValue
-            values = values + `$${valNum++}`;
-            
-            // add the actual value to the values array
-            if(isNaN(Number(task[key]))){ // if the value of task[key] is not a number
-                queryValues.push(task[key]); // add as a string
-            } else { // if it is a number
-                queryValues.push(Number(task[key])); // add as a number
-            } // end if
-        } // end for loop
-    } // end try 
-    catch (error) {
-        res.status(400).send(`Error cause by key "${currentKey}":`, error);
-        return null;
-    } // end catch
+        // if the column string is not empty, add a comma to columns and values
+        if (columns !== ''){ 
+            columns = columns + ", ";
+            values = values + ", ";
+        } // end if
+
+        // add the key to the columns string
+        columns = columns + key;
+        // and "$valNum" to the values string, then iterate currentValue
+        values = values + `$${valNum++}`;
+
+        if(isNaN(Number(task[key]))){ // if the value of task[key] is not a number
+            queryValues.push(task[key]); // add as a string
+        } else { // if it is a number
+            queryValues.push(Number(task[key])); // add as a number
+        } // end if
+    }
 
     // if we've reached this point we should be good to build the query
     let queryText = `INSERT INTO tasks (${columns}) VALUES (${values});`;
