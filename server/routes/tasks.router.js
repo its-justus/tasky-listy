@@ -33,7 +33,7 @@ router.put('/:id', updateTask);
 // Router functions are below, ordered alphabetically including HTTP verb
 
 /**
- * deleteTask handles DELETE /tasks/:id routes. submits a pg query to the database.
+ * deleteTask handles DELETE /tasks/:id routes. calls a procedure to "delete" the task.
  * 
  * @param req - the request object containing request details received by the router
  * @param res - the response object by which to send a reply to the client
@@ -42,7 +42,7 @@ router.put('/:id', updateTask);
 function deleteTask(req, res){
     console.log("ROUTE: DELETE /tasks/:id");
 
-    //define query text
+    //define query text and values
     const queryText = "CALL mark_deleted($1);"
     const queryValues = [Number(req.params.id)];
     console.log('\tQUERY:', queryText);
@@ -50,9 +50,9 @@ function deleteTask(req, res){
 
     // query the pool
     pool.query(queryText, queryValues)
-        .then((result) => { // successful query, respond with rows
+        .then((result) => { // successful query, responds with deleted task
             console.log("\tQUERY: Successfully deleted row!");
-            res.status(204).send(result.rows);
+            res.status(204).send('Deleted task');
         })// end then
         .catch((error) => { // error caught, respond with error message
             console.log("\tQUERY: Failure:", error);
@@ -163,6 +163,7 @@ function postTask(req, res){
  */
 function updateTask(req, res){
     console.log('ROUTE: PUT /tasks/:id');
+    // define task as the body.
     let task = req.body;
     task.id = req.params.id;
 
@@ -172,7 +173,8 @@ function updateTask(req, res){
     let valNum = 1; // number iterator to be used in generating the values string
     let queryValues = []; // values array to be used in the pool.query call
 
-    // loop through keys in the received task
+    // __________ BUILD COLUMN AND VALUE STRINGS __________
+    // Looping through task to build columns and values strings, as well as queryValues array
     for(let key in task) {
         let value = task[key];
         // if value is falsy or the key name is not in columnNames
@@ -195,15 +197,17 @@ function updateTask(req, res){
         // and "$valNum" to the values string, then iterate currentValue
         values = values + `$${valNum++}`;
 
+        // add key value as a number if it can be cast to one.
         if(isNaN(Number(task[key]))){ // if the value of task[key] is not a number
             queryValues.push(task[key]); // add as a string
         } else { // if it is a number
             queryValues.push(Number(task[key])); // add as a number
         } // end if
     }
-    // add id as the last val in values
+    // add id as the last val in values so it can be used in the where clause
     queryValues.push(Number(task.id));
 
+    // __________ BUILD QUERY TEXT __________
     // if we've reached this point we should be good to build the query
     let queryText = `UPDATE tasks SET (${columns}) = (${values}) WHERE id=$${valNum};`;
     console.log('\tQUERY:', queryText);
