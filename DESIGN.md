@@ -12,7 +12,7 @@
     - color - int optional
 - Procedures [STRETCH]
     - mark_complete (id) - sets completed date of task(id) to now()
-    - unmark_complete (id) - sets completed date of task(id) to null
+    - mark_incomplete (id) - sets completed date of task(id) to null
     - mark_deleted (id) - sets deleted bool of task(id) to true
 
 
