@@ -14,6 +14,7 @@
     - mark_complete (id) - sets completed date of task(id) to now()
     - mark_incomplete (id) - sets completed date of task(id) to null
     - mark_deleted (id) - sets deleted bool of task(id) to true
+    - get_all_tasks () - returns a table of all tasks that have not been marked deleted. should be used in place of referencing the tasks table directly
 
 
 ## Backend 

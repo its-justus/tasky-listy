@@ -1,4 +1,12 @@
 /*
+Note from Ian:
+I decided to explore some more database functionality with this project. I've added a
+couple procedures that can be called instead of directly querying the database. The database
+can also handle "deleting" tasks while keeping the data around. See the comments for each section
+for more details.
+*/
+
+/*
 first create the "task_app" database
 */
 CREATE DATABASE task_app;
