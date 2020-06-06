@@ -38,7 +38,7 @@ function deleteTask(req, res){
  * getTasks handles GET /tasks/ routes. queries database for all tasks.
  * 
  * @param req - the request object containing request details received by the router
- * @param res - the response object by which to send a reply to the client
+ * @param res - responds with a status code and the requested rows
  * @returns null
  */
 function getTasks(req, res){
@@ -62,10 +62,72 @@ function getTasks(req, res){
 }// end getTasks
 
 
-// POST root of /books adds a book to the table
+/**
+ * postTask handles POST /tasks/ routes. adds a new task to the database
+ * 
+ * @param req - the request object containing request details received by the router
+ * @param res - the response object by which to send a reply to the client
+ * @returns null
+ */
 function postTask(req, res){
-    
-}// end POST root
+    console.log('ROUTE: POST /tasks/');
+    let task = req.body;
+
+    // define columns and values strings
+    let columns = ''; // columns string to be inserted into the query
+    let values = ''; // values string to be inserted into the query
+    let valNum = 1; // number iterator to be used in generating the values string
+    let queryValues = []; // values array to be used in the pool.query call
+    let currentKey = ''; // current key of task, used for error messages
+
+    // keys in body are expected to match the column names in the tasks table
+    try {
+        for (let key in task){ // loop through each key in task
+            currentKey = key; // set currentKey to key for error messaging
+            
+            if (!task[key]){ // if the value of task[key] is not truthy, skip this key 
+                continue;
+            } // end if
+
+            if (columns !== ''){ // if the column string is not empty, add a comma to columns and values
+                columns = columns + ", ";
+                values = values + ", ";
+            } // end if
+            
+            // add the key to the columns string
+            columns = columns + key;
+            // and "$valNum" to the values string, then iterate currentValue
+            values = values + `$${valNum++}`;
+            
+            // add the actual value to the values array
+            if(isNaN(Number(task[key]))){ // if the value of task[key] is not a number
+                queryValues.push(task[key]); // add as a string
+            } else { // if it is a number
+                queryValues.push(Number(task[key])); // add as a number
+            } // end if
+        } // end for loop
+    } // end try 
+    catch (error) {
+        res.status(400).send(`Error cause by key "${currentKey}":`, error);
+        return null;
+    } // end catch
+
+    // if we've reached this point we should be good to build the query
+    let queryText = `INSERT INTO tasks (${columns}) VALUES (${values});`;
+    console.log('\tQUERY:', queryText);
+    console.log('\tVALUES:', queryValues);
+
+    // time to make the actual pg query
+    pool.query(queryText, queryValues)
+        .then((result) => { // successful query, respond with rows
+            console.log("\tQUERY: Success! rowCount:", result.rowCount);
+            res.sendStatus(201);
+        })// end then
+        .catch((error) => { // error caught, respond with error message
+            console.log("\tQUERY: Failure:", error);
+            res.status(500).send("Ouch, don't do that please!");
+        });// end catch
+}// end postTask
 
 // PUT /books/:id updates the status of a book. the body must contain a status key with the 
 // new status
