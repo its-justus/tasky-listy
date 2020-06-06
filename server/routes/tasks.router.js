@@ -40,7 +40,24 @@ router.put('/:id', updateTask);
  * @returns null
  */
 function deleteTask(req, res){
-    
+    console.log("ROUTE: DELETE /tasks/:id");
+
+    //define query text
+    const queryText = "CALL mark_deleted($1);"
+    const queryValues = [Number(req.params.id)];
+    console.log('\tQUERY:', queryText);
+    console.log('\tVALUES:', queryValues);
+
+    // query the pool
+    pool.query(queryText, queryValues)
+        .then((result) => { // successful query, respond with rows
+            console.log("\tQUERY: Successfully deleted row!");
+            res.status(204).send(result.rows);
+        })// end then
+        .catch((error) => { // error caught, respond with error message
+            console.log("\tQUERY: Failure:", error);
+            res.status(500).send(error);
+        });// end catch    
 }// end deleteTask
 
 
