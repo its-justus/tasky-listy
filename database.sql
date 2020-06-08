@@ -7,7 +7,8 @@ for more details.
 */
 
 /*
-first create the "task_app" database
+first create the "task_app" database. do not run this command
+if you have already created the database
 */
 CREATE DATABASE task_app;
 

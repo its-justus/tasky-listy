@@ -1,7 +1,7 @@
 // taskTemplate is a template div used to add new tasks to the various lists
 // task rows are created with jQuery on this string and then modified with further jQuery functions
 const taskTemplate = `
-<div class="row task-row">
+<div class="row task-row bg-light">
     <span class="col-12 py-2 px-3 border d-flex flex-row justify-content-between align-items-center">
         <input type="checkbox" class="task-complete d-inline-flex"/>
         <span class="p task-text d-inline-flex"></span>
@@ -17,6 +17,11 @@ $('document').ready(() => {
     $('#modalAddTaskSubmit').on('click', addTask);
     $('.task-list').on('click', '.task-delete', deleteTask);
     $('.task-list').on('click', '.task-complete', toggleComplete);
+
+    // clear the modal fields on hidden
+    $('#modalAddTask').on('hidden.bs.modal', (event) => {
+        $(event.target).find('.form-control').val('');
+    })
 })
 
 
@@ -24,11 +29,14 @@ $('document').ready(() => {
  * addTask creates a task object from form data and sends an ajax
  * request to the server. it then reloads the task lists
  * 
- * @param event - the event that called this function. not used
+ * @param event - the event that called this function.
  * @returns null
  */
 function addTask(event){
     console.log("In addTask");
+    // get modal object
+    let modal = $(event.target).closest('.modal');
+    console.log(modal);
 
     // create task object
     let task = {
@@ -54,7 +62,10 @@ function addTask(event){
         }).then((response) => {
             // POST successful, refresh the task lists
             console.log('SUCCESS POST route: /tasks/', response);
+            // refresh task lists
             refreshTasks();
+            // hide the modal
+            modal.modal('hide');
         }).catch((response) => {
             // error, notify the user
             alert('Request failed. Try again later.');
@@ -89,7 +100,13 @@ function deleteTask(event) {
     );
 }
 
-
+/**
+ * toggleComplete sends an ajax request to the server
+ * to swap the current complete state of the task.
+ * 
+ * @param event - the event that triggered the function call
+ * @returns null
+ */
 function toggleComplete(event) {
     // get task from event task-row parent
     let task = $(event.target).closest('.task-row').data('task');
@@ -121,7 +138,7 @@ function toggleComplete(event) {
  * @returns null
  */
 function refreshTasks() {
-
+    // send ajax GET request to the server
     $.ajax({
         method: 'GET',
         url: '/tasks/',
