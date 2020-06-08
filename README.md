@@ -28,7 +28,7 @@ TaskyListy allows a user to create tasks that can then be marked complete. Tasks
 
  ## Built With
 
- ![Node.js](https://nodejs.org/en/)
- ![Express.js](https://expressjs.com/)
- ![Postgresql](https://www.postgresql.org/)
- ![Bootstrap](https://getbootstrap.com/)
+ [Node.js](https://nodejs.org/en/)
+ [Express.js](https://expressjs.com/)
+ [Postgresql](https://www.postgresql.org/)
+ [Bootstrap](https://getbootstrap.com/)
