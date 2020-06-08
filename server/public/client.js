@@ -16,7 +16,7 @@ $('document').ready(() => {
     // click handlers
     $('#modalAddTaskSubmit').on('click', addTask);
     $('.task-list').on('click', '.task-delete', deleteTask);
-
+    $('.task-list').on('click', '.task-complete', toggleComplete);
 })
 
 
@@ -62,7 +62,13 @@ function addTask(event){
     );
 }
 
-
+/**
+ * deleteTask sends an ajax DELETE request to the server,
+ * then updates the task lists if successful
+ * 
+ * @param event - event that triggered the function call, used to determine which task to delete
+ * @returns null
+ */
 function deleteTask(event) {
     // get task, which is stored in the data-task of the task-row
     let task = $(event.target).closest('.task-row').data('task');
@@ -82,6 +88,31 @@ function deleteTask(event) {
         }
     );
 }
+
+
+function toggleComplete(event) {
+    // get task from event task-row parent
+    let task = $(event.target).closest('.task-row').data('task');
+    console.log(task);
+
+    // toggle task.complete
+    task.complete = !task.complete;
+
+    // send the ajax PUT request
+    $.ajax({
+        method: 'PUT',
+        url: `/tasks/${task.id}`,
+        data: task,
+        }).then((response) => {
+            console.log('SUCCESS PUT route: /tasks/${task.id}', response);
+            refreshTasks();
+        }).catch((response) => {
+            // error, notify the user:,
+            alert('Request failed. Try again later.');
+        }
+    );
+}
+
 
 /**
  * refreshTasks submits an ajax request to GET /tasks/ and then
