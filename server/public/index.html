@@ -8,6 +8,7 @@
         crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="client.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
     <link rel="stylesheet" href="style.css">
     <title>Tasky</title>
@@ -37,7 +38,7 @@
             </nav>
         </div>
         <div class="row">
-            <div class="col-sm-12 col-md-6 col-lg py-1 my-1 my-md-0" id="currentTasks">
+            <div class="task-list col-sm-12 col-md-6 col-lg py-1 my-1 my-md-0" id="currentTasks">
                 <div class="row">
                     <span class="col-12 bg-primary p-2 text-white d-flex flex-row justify-content-between border rounded-lg border-dark col-sm col-12">
                         <h2 class="d-inline-flex">Current Tasks</h2>
@@ -52,7 +53,7 @@
                     </span>
                 </div>
             </div>
-            <div class="col-sm-12 col-md-6 col-lg py-1 my-1 my-md-0" id="completedTasks">
+            <div class="task-list col-sm-12 col-md-6 col-lg py-1 my-1 my-md-0" id="completedTasks">
                 <div class="row">
                     <span class="col-12 bg-success p-2 text-white d-flex flex-row justify-content-between border rounded-lg border-dark col-sm col-12">
                         <h2 class="d-inline-flex">Completed Tasks</h2>
@@ -66,15 +67,15 @@
                     </span>
                 </div>
             </div>
-            <div class="col-sm-12 col-md-6 col-lg py-1 py-md-0 my-1 my-md-0 px-md-3 d-none" id="deletedTasks">
+            <div class="task-list col-sm-12 col-md-6 col-lg py-1 py-md-0 my-1 my-md-0 px-md-3 d-none" id="deletedTasks">
                 <div class="row">
                     <span class="bg-secondary p-2 text-white d-flex flex-row justify-content-between border rounded-lg border-dark col-sm col-12">Deleted</span>
                 </div>
                 <div class="row task-row">
                     <span class="col-12 py-2 px-3 border d-flex flex-row justify-content-between align-items-center">
-                        <input type="checkbox" class="d-inline-flex"/>
-                        <span class="p task-text d-inline-flex">This is a test class.</span>
-                        <button type="button" class="btn btn-outline-danger d-inline-flex">X</button>
+                        <input type="checkbox" class="task-complete d-inline-flex"/>
+                        <span class="task-text p d-inline-flex">This is a test class.</span>
+                        <button type="button" class="task-delete btn btn-outline-danger d-inline-flex">X</button>
                     </span>
                 </div>
             </div>
@@ -97,7 +98,7 @@
                 <form>
                     <div class="form-group">
                         <label for="task">Task</label>
-                        <textarea class="form-control" id="text" rows="2" placeholder="Task details"></textarea>
+                        <textarea class="form-control" id="task" rows="2" placeholder="Task details"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="due">Due Date</label>
@@ -106,8 +107,11 @@
                 </form>
             </div>
             <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Discard</button>
-            <button type="button" class="btn btn-primary" id="modalAddTaskSubmit">Add Task</button>
+                <div class="alert alert-danger d-none" role="alert" id="alertAddTask">
+                    Please enter a task.
+                </div>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Discard</button>
+                <button type="button" class="btn btn-primary" id="modalAddTaskSubmit">Add Task</button>
             </div>
         </div>
         </div>
