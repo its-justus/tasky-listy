@@ -8,7 +8,7 @@ TaskyListy allows a user to create tasks that can then be marked complete. Tasks
 
 ## Screenshots
 
-![Screenshot]('images/screenshot.png')
+![Screenshot](images/screenshot.png)
 
 ## Installation
 
